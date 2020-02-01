@@ -1,0 +1,207 @@
+#include<stdio.h>
+#include<stdlib.h>
+
+int valueAnswer = 0;
+int priorityAnswer = 0;
+
+struct node{
+	int id;
+	int attr;
+	int val;
+	int priority;
+	int height;
+	
+	struct node *left;
+	struct node *right;
+};
+
+int max(int a,int b){
+	return (a > b) ? a : b;
+}
+
+int getHeight(struct node *localRoot){
+	if(localRoot == NULL){
+		return 0;
+	}
+	return localRoot->height;
+}
+
+int getBalanceFactor(struct node *localRoot){
+	if(localRoot == NULL){
+		return 0;
+	}
+	return getHeight(localRoot->left) - getHeight(localRoot->right);
+}
+
+struct node *newNode(int id, int attr, int val, int priority){
+	struct node *nNode = (struct node *)malloc(sizeof(struct node));
+	
+	nNode->id = id;
+	nNode->attr = attr;
+	nNode->val = val;
+	nNode->priority = priority;
+	nNode->left = NULL;
+	nNode->right = NULL;
+	nNode->height = 1;
+	
+	return nNode;
+}  
+
+struct node *leftRotate(struct node *initialNode){
+	struct node *aNode = initialNode->right;
+	struct node *bNode = aNode->left;
+	
+	aNode->left = initialNode;
+	initialNode->right = bNode;
+	
+	initialNode->height = max(getHeight(initialNode->left),getHeight(initialNode->right)) + 1;
+	
+	aNode->height = max(getHeight(aNode->left),getHeight(aNode->right)) + 1;
+	
+	return aNode;
+}
+
+struct node *rightRotate(struct node *initialNode){
+	struct node *aNode = initialNode->left;
+	struct node *bNode = aNode->right;
+	
+	initialNode->left = bNode;
+	aNode->right = initialNode;
+	
+	initialNode->height = max(getHeight(initialNode->left),getHeight(initialNode->right)) + 1;
+	
+	aNode->height = max(getHeight(aNode->left),getHeight(aNode->right)) + 1;
+	
+	return aNode;
+}
+
+struct node *reBalance(struct node *localRoot) {
+	
+	localRoot->height = max(getHeight(localRoot->left),
+						getHeight(localRoot->right)) + 1;
+	int bfact = getBalanceFactor(localRoot);
+	
+	if (bfact > 1 && getBalanceFactor(localRoot->left) < 0) {
+		localRoot->left = leftRotate(localRoot->left);
+		return rightRotate(localRoot);
+	}
+	if (bfact > 1 && getBalanceFactor(localRoot->left) >= 0) {
+		return rightRotate(localRoot);
+	}
+	if (bfact < -1 && getBalanceFactor(localRoot->right) <= 0) {
+		return leftRotate(localRoot);
+	}
+	if (bfact < -1 && getBalanceFactor(localRoot->right) > 0) {
+		localRoot->right = rightRotate(localRoot->right);
+		return leftRotate(localRoot);
+	}
+	return localRoot;
+}
+
+struct node *insertVal(struct node *localRoot, int id, int attr, int val, int priority){
+
+	if(localRoot == NULL){	
+		return newNode(id,attr,val,priority);
+	}
+	
+	if(localRoot->id < id){
+		localRoot->right = insertVal(localRoot->right,id,attr,val,priority);
+	}
+	else if(localRoot->id > id){
+		localRoot->left = insertVal(localRoot->left,id,attr,val,priority);
+	}
+	else if(localRoot->id == id){
+		if(localRoot->attr < attr){
+			localRoot->right = insertVal(localRoot->right,id,attr,val,priority);
+		}
+		else if(localRoot->attr > attr){
+			localRoot->left = insertVal(localRoot->left,id,attr,val,priority);
+		}
+		else if(localRoot->attr == attr){
+			if(localRoot->priority > priority){
+				localRoot->left = insertVal(localRoot->left,id,attr,val,priority);
+			}
+			else if(localRoot->priority < priority){
+				localRoot->right = insertVal(localRoot->right,id,attr,val,priority);
+			}
+			else if(localRoot->priority == priority){
+					localRoot->val = val;
+			}
+		}
+	}
+	else{
+		return localRoot;
+	}
+	return reBalance(localRoot);
+}
+
+void findNode(struct node *localRoot,int id,int attr){
+	if(localRoot == NULL){
+		
+	}	
+	else if(localRoot->id < id){
+		findNode(localRoot->right,id,attr);
+	}
+	else if(localRoot->id > id){
+		findNode(localRoot->left,id,attr);
+	}
+	else if(localRoot->id == id){
+		if(localRoot->attr < attr){
+			findNode(localRoot->right,id,attr);
+		}		
+		else if(localRoot->attr > attr){
+			findNode(localRoot->left,id,attr);
+		}
+		else if(localRoot->attr == attr){
+			if(localRoot->right == NULL){
+				if(priorityAnswer < localRoot->priority){
+					valueAnswer = localRoot->val;
+					priorityAnswer = localRoot->priority;
+				}
+			}
+			else if(localRoot->right->attr == attr && localRoot->right->id == id){
+				
+				findNode(localRoot->right,id,attr);
+			}
+			else if(localRoot->right->attr != attr || localRoot->right->id != id){
+				if(priorityAnswer < localRoot->priority){
+					valueAnswer = localRoot->val;
+					priorityAnswer = localRoot->priority;
+				}
+				
+				if(localRoot->left != NULL)
+				findNode(localRoot->left,id,attr);
+				
+				if(localRoot->right != NULL)
+				findNode(localRoot->right,id,attr);
+			}
+		}
+	}
+}
+
+int main(){
+	
+	struct node *root = NULL;
+	
+	int css , print;
+	int id, attr, val, priority;
+	
+	scanf("%d %d",&css,&print);
+	
+	for(int i=0;i<css;i++){
+		scanf("%d %d %d %d",&id,&attr,&val,&priority);
+		root = insertVal(root, id, attr, val, priority);
+	}
+	
+	int testId,testAttr;
+	
+	for(int i=0;i<print;i++){
+		valueAnswer = 0;
+		priorityAnswer = 0;
+		scanf("%d %d",&testId,&testAttr);
+		findNode(root,testId,testAttr);
+		printf("%d\n",valueAnswer);
+	}
+	
+	return 0;
+}
